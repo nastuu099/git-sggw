@@ -1,1 +1,1 @@
-#Tu bedzie apka we flasku
+print("Hello World")
