@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div>
+    {% for el in todo_list[::-1] %}
+    <div class="d-flex align-items-center mb-2">
+        <!-- Tytuł zadania -->
+        <span class="flex-grow-1">{{ el.title }}</span>
+
+        <!-- Ikonka statusu -->
+        {% if el.completed %}
+        <span class="me-2 text-success">✅</span>
+        {% else %}
+        <span class="me-2 text-danger">❌</span>
+        {% endif %}
+
+        <!-- Formularz z przyciskiem do zmiany statusu -->
+        <form method="post" action="{{ url_for('toggle', task_id=el.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-sm
+                {% if el.completed %}btn-success{% else %}btn-warning{% endif %}">
+                {% if el.completed %}Zrealizowane{% else %}Oznacz jako zrealizowane{% endif %}
+            </button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Formularz dodawania nowego zadania -->
+<form method="post" action="{{ url_for('add') }}" class="mt-4">
+    <div class="mb-3">
+        <label class="form-label">Rzecz do zrobienia</label>
+        <input type="text" class="form-control" name="item_text">
+    </div>
+    <button type="submit" class="btn btn-primary mb-3">Dodaj do listy</button>
+</form>
+{% endblock %}
