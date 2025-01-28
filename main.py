@@ -1,8 +1,10 @@
 import os
+
 from flask import Flask, request, render_template, redirect, url_for
 from flask_security import Security, UserMixin, RoleMixin, \
     SQLAlchemyUserDatastore, current_user, login_required
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
@@ -26,11 +28,21 @@ roles_user = db.Table(
 )
 
 
-class Task(db.Model):
+class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    completed = db.Column(db.Boolean, default=False)
-    user_id = db.Column(db.String(255), db.ForeignKey('user.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now())
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', backref=db.backref('posts', lazy=True))
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', backref=db.backref('comments', lazy=True))
+    post = db.relationship('Post', backref=db.backref('comments', lazy=True))
 
 class Role(db.Model, RoleMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -42,7 +54,6 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     active = db.Column(db.Boolean, default=True)
-    confirmed_at = db.Column(db.DateTime)
     fs_uniquifier = db.Column(db.String(255), unique=True, nullable=False)  # Wyamagane od wersji 4.0.0
     roles = db.relationship('Role', secondary=roles_user, backref=db.backref('users'))
 
@@ -60,31 +71,40 @@ security = Security(app, user_datastore)
 @app.route("/")
 @login_required
 def index():
-    tasks = Task.query.all()
-    users = Task.query.filter_by(user_id=current_user.id).all()
-    return render_template("index.html", todo_list=tasks, users = users)
+    posts = Post.query.order_by(Post.created_at.desc()).all()
+    return render_template("index.html", posts=posts)
 
-
-@app.route("/add_task", methods=["POST"])
+@app.route("/add_post", methods=["POST"])
 @login_required
-def add():
-    new_task = Task(
-        title=request.form["item_text"],
+def add_post():
+    new_post = Post(
+        content=request.form["content"],
         user_id=current_user.get_id()
     )
-    db.session.add(new_task)
+    db.session.add(new_post)
     db.session.commit()
     return redirect(url_for("index"))
 
-
-@app.route('/toggle/<int:task_id>', methods=['POST'])
-def toggle(task_id):
-    task = Task.query.get(task_id)
-    if task :
-        task.completed = not task.completed
+@app.route('/edit_post/<int:post_id>', methods=['POST'])
+@login_required
+def edit_post(post_id):
+    post = Post.query.get(post_id)
+    if post and post.user_id == current_user.id:
+        post.content = request.form["content"]
         db.session.commit()
-        return redirect(url_for("index"))
+    return redirect(url_for("index"))
 
+@app.route("/add_comment/<int:post_id>", methods=["POST"])
+@login_required
+def add_comment(post_id):
+    new_comment = Comment(
+        content=request.form["content"],
+        post_id=post_id,
+        user_id=current_user.get_id()
+    )
+    db.session.add(new_comment)
+    db.session.commit()
+    return redirect(url_for("index"))
 
 
 if __name__ == "__main__":

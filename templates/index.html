@@ -2,35 +2,45 @@
 
 {% block content %}
 <div>
-    {% for el in todo_list[::-1] %}
-    <div class="d-flex align-items-center mb-2">
-        <!-- Tytuł zadania -->
-        <span class="flex-grow-1">{{ el.title }}</span>
+    <form method="post" action="{{ url_for('add_post') }}" class="mt-4">
+    <div class="mb-3">
+        <label class="form-label">Dodaj nowy wpis</label>
+        <textarea class="form-control" name="content" rows="3" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Dodaj wpis </button>
+</form>
+    {% for post in posts %}
+    <div class="d-flex flex-column mb-3 p-3 border rounded">
+        <!-- Autor i data -->
+        <p><strong>{{ post.user.email }}</strong> napisał:</p>
+        <p class="mb-1">{{ post.content }}</p>
+        <p class="text-muted"><small>Dodano: {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</small></p>
 
-        <!-- Ikonka statusu -->
-        {% if el.completed %}
-        <span class="me-2 text-success">✅</span>
-        {% else %}
-        <span class="me-2 text-danger">❌</span>
+        <!-- Formularz do edycji wpisu (tylko dla autora) -->
+        {% if post.user_id == current_user.id %}
+        <form method="post" action="{{ url_for('edit_post', post_id=post.id) }}" class="mt-2">
+            <input type="text" name="content" class="form-control mb-2" value="{{ post.content }}" required>
+            <button type="submit" class="btn btn-sm btn-primary">Edytuj</button>
+        </form>
         {% endif %}
 
-        <!-- Formularz z przyciskiem do zmiany statusu -->
-        <form method="post" action="{{ url_for('toggle', task_id=el.id) }}" class="d-inline">
-            <button type="submit" class="btn btn-sm
-                {% if el.completed %}btn-success{% else %}btn-warning{% endif %}">
-                {% if el.completed %}Zrealizowane{% else %}Oznacz jako zrealizowane{% endif %}
-            </button>
+        <!-- Formularz do dodawania komentarzy -->
+        <form action="{{ url_for('add_comment', post_id=post.id) }}" method="post" class="mt-3">
+            <input type="text" name="content" placeholder="Dodaj komentarz" class="form-control mb-2" required>
+            <button type="submit" class="btn btn-sm btn-secondary">Dodaj komentarz</button>
         </form>
+
+        <!-- Lista komentarzy -->
+        {% for comment in post.comments %}
+        <div class="mt-2 p-2 border rounded bg-light">
+            <p><strong>{{ comment.user.email }}</strong>: {{ comment.content }}</p>
+            <p class="text-muted"><small>{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small></p>
+        </div>
+        {% endfor %}
     </div>
     {% endfor %}
 </div>
 
-<!-- Formularz dodawania nowego zadania -->
-<form method="post" action="{{ url_for('add') }}" class="mt-4">
-    <div class="mb-3">
-        <label class="form-label">Rzecz do zrobienia</label>
-        <input type="text" class="form-control" name="item_text">
-    </div>
-    <button type="submit" class="btn btn-primary mb-3">Dodaj do listy</button>
-</form>
+<!-- Formularz dodawania nowego wpisu -->
+
 {% endblock %}
