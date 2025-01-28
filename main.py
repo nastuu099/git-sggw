@@ -10,6 +10,8 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'developerskie')
 app.config['SECURITY_PASSWORD_SALT'] = os.environ.get('SECURITY_PASSWORD_SALT', 'jakas-sol')
 app.config['SECURITY_REGISTERABLE'] = True
 app.config['SECURITY_SEND_REGISTER_EMAIL'] = False
+app.config['SECURITY_LOGIN_USER_TEMPLATE'] = 'security/login_form.html'
+app.config['SECURITY_REGISTER_USER_TEMPLATE'] = 'security/register_form.html'
 
 db = SQLAlchemy(app)
 
