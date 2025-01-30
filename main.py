@@ -17,8 +17,7 @@ app.config['SECURITY_REGISTER_USER_TEMPLATE'] = 'security/register_form.html'
 
 db = SQLAlchemy(app)
 
-#print(os.environ.get('SECRET_KEY'))
-#print(os.environ.get('SECURITY_PASSWORD_SALT'))
+
 
 
 roles_user = db.Table(
@@ -85,14 +84,7 @@ def add_post():
     db.session.commit()
     return redirect(url_for("index"))
 
-@app.route('/edit_post/<int:post_id>', methods=['POST'])
-@login_required
-def edit_post(post_id):
-    post = Post.query.get(post_id)
-    if post and post.user_id == current_user.id:
-        post.content = request.form["content"]
-        db.session.commit()
-    return redirect(url_for("index"))
+
 
 @app.route("/add_comment/<int:post_id>", methods=["POST"])
 @login_required
